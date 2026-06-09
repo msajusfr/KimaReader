@@ -1,4 +1,4 @@
-import { BookOpen, FileUp, Library, Play, Sparkles } from 'lucide-react'
+import { BookOpen, FileUp, KeyRound, Library, Play, Sparkles } from 'lucide-react'
 import type { ChangeEvent } from 'react'
 import { VocabularyPanel } from '../components/Vocabulary/VocabularyPanel'
 import type { BookRecord } from '../types/book'
@@ -10,9 +10,19 @@ interface Props {
   onImport: (file: File) => void
   onOpenBook: (book: BookRecord) => void
   importing: boolean
+  onOpenSettings: () => void
+  apiConfigured: boolean
 }
 
-export const LibraryPage = ({ books, vocabulary, onImport, onOpenBook, importing }: Props) => {
+export const LibraryPage = ({
+  books,
+  vocabulary,
+  onImport,
+  onOpenBook,
+  importing,
+  onOpenSettings,
+  apiConfigured,
+}: Props) => {
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) onImport(file)
@@ -32,11 +42,25 @@ export const LibraryPage = ({ books, vocabulary, onImport, onOpenBook, importing
               Lire le grec moderne avec calme, contexte et mémoire.
             </h1>
           </div>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#d6bd7a] px-5 py-3 text-sm font-semibold text-[#15120b] shadow-lg shadow-[#d6bd7a]/10 transition hover:bg-[#e2cc91]">
-            <FileUp size={18} />
-            {importing ? 'Import...' : 'Importer EPUB'}
-            <input type="file" accept=".epub,application/epub+zip" className="sr-only" onChange={handleFile} />
-          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold shadow-lg transition ${
+                apiConfigured
+                  ? 'bg-white/10 text-white hover:bg-white/14'
+                  : 'bg-[#24364a] text-white hover:bg-[#2d435c]'
+              }`}
+            >
+              <KeyRound size={18} />
+              API
+            </button>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#d6bd7a] px-5 py-3 text-sm font-semibold text-[#15120b] shadow-lg shadow-[#d6bd7a]/10 transition hover:bg-[#e2cc91]">
+              <FileUp size={18} />
+              {importing ? 'Import...' : 'Importer EPUB'}
+              <input type="file" accept=".epub,application/epub+zip" className="sr-only" onChange={handleFile} />
+            </label>
+          </div>
         </header>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">

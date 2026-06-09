@@ -1,9 +1,10 @@
 import ePub from 'epubjs'
-import { Bookmark, ChevronLeft, ChevronRight, Library, Minus, Moon, Plus, Search, Sun, Volume2 } from 'lucide-react'
+import { Bookmark, ChevronLeft, ChevronRight, KeyRound, Library, Minus, Moon, Plus, Search, Sun, Volume2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { IconButton } from '../UI/IconButton'
 import { TranslationPopover } from '../Translation/TranslationPopover'
 import type { BookRecord, ReaderPreferences } from '../../types/book'
+import type { AiSettings } from '../../types/settings'
 import type { TranslationResult } from '../../types/translation'
 import { epubService } from '../../services/epubService'
 import { speechService } from '../../services/speechService'
@@ -16,6 +17,8 @@ interface Props {
   onBack: () => void
   onBookUpdate: (book: BookRecord) => void
   onSaveVocabulary: (result: TranslationResult) => void
+  aiSettings: AiSettings
+  onOpenSettings: () => void
 }
 
 export const ReaderView = ({
@@ -25,12 +28,15 @@ export const ReaderView = ({
   onBack,
   onBookUpdate,
   onSaveVocabulary,
+  aiSettings,
+  onOpenSettings,
 }: Props) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const renditionRef = useRef<ReturnType<ReturnType<typeof ePub>['renderTo']> | null>(null)
   const epubRef = useRef<ReturnType<typeof ePub> | null>(null)
   const bookRef = useRef(book)
   const preferencesRef = useRef(preferences)
+  const aiSettingsRef = useRef(aiSettings)
   const onBookUpdateRef = useRef(onBookUpdate)
   const [selectedText, setSelectedText] = useState('')
   const [translation, setTranslation] = useState<TranslationResult>()
@@ -41,8 +47,9 @@ export const ReaderView = ({
   useEffect(() => {
     bookRef.current = book
     preferencesRef.current = preferences
+    aiSettingsRef.current = aiSettings
     onBookUpdateRef.current = onBookUpdate
-  }, [book, onBookUpdate, preferences])
+  }, [aiSettings, book, onBookUpdate, preferences])
 
   const readerStyles = useMemo(
     () => ({
@@ -97,7 +104,7 @@ export const ReaderView = ({
           setSelectedText(text)
           setLoadingTranslation(true)
           setTranslation(undefined)
-          translationService.translate(text).then((result) => {
+          translationService.translate(text, aiSettingsRef.current).then((result) => {
             setTranslation(result)
             setLoadingTranslation(false)
           })
@@ -150,7 +157,7 @@ export const ReaderView = ({
     setSelectedText(text)
     setLoadingTranslation(true)
     setTranslation(undefined)
-    translationService.translate(text).then((result) => {
+    translationService.translate(text, aiSettings).then((result) => {
       setTranslation(result)
       setLoadingTranslation(false)
     })
@@ -175,6 +182,9 @@ export const ReaderView = ({
           </IconButton>
           <IconButton label="Mode clair ou sombre" onClick={() => updatePreferences({ theme: preferences.theme === 'dark' ? 'light' : 'dark' })}>
             {preferences.theme === 'dark' ? <Moon size={17} /> : <Sun size={17} />}
+          </IconButton>
+          <IconButton label="Configuration OpenAI" onClick={onOpenSettings} active={aiSettings.provider === 'openai'}>
+            <KeyRound size={17} />
           </IconButton>
         </div>
       </header>
@@ -229,6 +239,9 @@ export const ReaderView = ({
             </label>
             <button type="button" onClick={() => speechService.speak(selectedText || book.title)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/14">
               <Volume2 size={16} /> Lire la sélection
+            </button>
+            <button type="button" onClick={onOpenSettings} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#c8a96a] px-4 py-2 text-sm font-medium text-[#15120b] hover:bg-[#d8bd80]">
+              <KeyRound size={16} /> API traduction
             </button>
           </div>
         </aside>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Shell } from './components/Layout/Shell'
 import { ReaderView } from './components/Reader/ReaderView'
+import { SettingsPanel } from './components/Settings/SettingsPanel'
 import { defaultBooks } from './data/sampleData'
 import { useTheme } from './hooks/useTheme'
 import { useVocabulary } from './hooks/useVocabulary'
@@ -19,6 +20,8 @@ function App() {
   })
   const [activeBookId, setActiveBookId] = useState<string | undefined>(() => storageService.getSession().lastBookId)
   const [importing, setImporting] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [aiSettings, setAiSettings] = useState(() => storageService.getAiSettings())
   const { preferences, setPreferences } = useTheme()
   const vocabulary = useVocabulary()
 
@@ -27,6 +30,10 @@ function App() {
   useEffect(() => {
     storageService.saveBooks(books)
   }, [books])
+
+  useEffect(() => {
+    storageService.saveAiSettings(aiSettings)
+  }, [aiSettings])
 
   useEffect(() => {
     const history = activeBook
@@ -63,6 +70,8 @@ function App() {
           onBack={() => setActiveBookId(undefined)}
           onBookUpdate={updateBook}
           onSaveVocabulary={vocabulary.addFromTranslation}
+          aiSettings={aiSettings}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
       ) : (
         <LibraryPage
@@ -71,8 +80,16 @@ function App() {
           importing={importing}
           onImport={importBook}
           onOpenBook={(book) => setActiveBookId(book.id)}
+          onOpenSettings={() => setSettingsOpen(true)}
+          apiConfigured={aiSettings.provider === 'openai' && Boolean(aiSettings.openAiApiKey.trim())}
         />
       )}
+      <SettingsPanel
+        open={settingsOpen}
+        settings={aiSettings}
+        onChange={setAiSettings}
+        onClose={() => setSettingsOpen(false)}
+      />
     </Shell>
   )
 }

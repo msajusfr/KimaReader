@@ -1,4 +1,5 @@
 import type { BookRecord, ReaderPreferences, ReadingSession } from '../types/book'
+import type { AiSettings } from '../types/settings'
 import type { TranslationResult } from '../types/translation'
 import type { VocabularyItem } from '../types/vocabulary'
 
@@ -8,6 +9,7 @@ const keys = {
   vocabulary: 'kima.vocabulary',
   translations: 'kima.translations',
   session: 'kima.session',
+  aiSettings: 'kima.aiSettings',
 }
 
 const read = <T>(key: string, fallback: T): T => {
@@ -41,4 +43,11 @@ export const storageService = {
     write(keys.translations, items.slice(0, 60)),
   getSession: () => read<ReadingSession>(keys.session, { history: [] }),
   saveSession: (session: ReadingSession) => write(keys.session, session),
+  getAiSettings: () =>
+    read<AiSettings>(keys.aiSettings, {
+      provider: 'mock',
+      openAiApiKey: '',
+      openAiModel: 'gpt-5.4-mini',
+    }),
+  saveAiSettings: (settings: AiSettings) => write(keys.aiSettings, settings),
 }
