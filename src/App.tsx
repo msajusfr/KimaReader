@@ -13,10 +13,16 @@ import { LibraryPage } from './pages/LibraryPage'
 function App() {
   const [books, setBooks] = useState<BookRecord[]>(() => {
     const storedBooks = storageService.getBooks()
+    const storedWithFreshDefaults = storedBooks.map((book) => {
+      const defaultBook = defaultBooks.find((item) => item.id === book.id)
+      return defaultBook
+        ? { ...book, ...defaultBook, currentLocation: undefined, progress: 0 }
+        : book
+    })
     const missingDefaultBooks = defaultBooks.filter(
-      (defaultBook) => !storedBooks.some((book) => book.id === defaultBook.id),
+      (defaultBook) => !storedWithFreshDefaults.some((book) => book.id === defaultBook.id),
     )
-    return [...missingDefaultBooks, ...storedBooks]
+    return [...missingDefaultBooks, ...storedWithFreshDefaults]
   })
   const [activeBookId, setActiveBookId] = useState<string | undefined>(() => storageService.getSession().lastBookId)
   const [importing, setImporting] = useState(false)
