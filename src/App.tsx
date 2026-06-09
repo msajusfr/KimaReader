@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Shell } from './components/Layout/Shell'
 import { ReaderView } from './components/Reader/ReaderView'
+import { defaultBooks } from './data/sampleData'
 import { useTheme } from './hooks/useTheme'
 import { useVocabulary } from './hooks/useVocabulary'
 import { epubService } from './services/epubService'
@@ -9,7 +10,13 @@ import type { BookRecord } from './types/book'
 import { LibraryPage } from './pages/LibraryPage'
 
 function App() {
-  const [books, setBooks] = useState<BookRecord[]>(() => storageService.getBooks())
+  const [books, setBooks] = useState<BookRecord[]>(() => {
+    const storedBooks = storageService.getBooks()
+    const missingDefaultBooks = defaultBooks.filter(
+      (defaultBook) => !storedBooks.some((book) => book.id === defaultBook.id),
+    )
+    return [...missingDefaultBooks, ...storedBooks]
+  })
   const [activeBookId, setActiveBookId] = useState<string | undefined>(() => storageService.getSession().lastBookId)
   const [importing, setImporting] = useState(false)
   const { preferences, setPreferences } = useTheme()
