@@ -1,15 +1,23 @@
 export type ReaderTheme = 'dark' | 'light'
 
-export interface BookRecord {
+export interface BookChapter {
+  title: string
+  paragraphs: string[]
+}
+
+export interface BookContent {
   id: string
   title: string
   author: string
-  fileName: string
-  dataUrl: string
-  coverUrl?: string
+  cover: string
+  sourceUrl: string
+  chapters: BookChapter[]
+}
+
+export interface BookProgress {
+  bookId: string
+  chapterIndex: number
   progress: number
-  currentLocation?: string
-  importedAt: string
   lastOpenedAt?: string
 }
 

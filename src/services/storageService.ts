@@ -1,10 +1,10 @@
-import type { BookRecord, ReaderPreferences, ReadingSession } from '../types/book'
+import type { BookProgress, ReaderPreferences, ReadingSession } from '../types/book'
 import type { AiSettings } from '../types/settings'
 import type { TranslationResult } from '../types/translation'
 import type { VocabularyItem } from '../types/vocabulary'
 
 const keys = {
-  books: 'kima.books',
+  bookProgresses: 'kima.bookProgresses',
   preferences: 'kima.preferences',
   vocabulary: 'kima.vocabulary',
   translations: 'kima.translations',
@@ -26,8 +26,9 @@ const write = <T>(key: string, value: T) => {
 }
 
 export const storageService = {
-  getBooks: () => read<BookRecord[]>(keys.books, []),
-  saveBooks: (books: BookRecord[]) => write(keys.books, books),
+  getBookProgresses: () => read<BookProgress[]>(keys.bookProgresses, []),
+  saveBookProgresses: (progresses: BookProgress[]) =>
+    write(keys.bookProgresses, progresses),
   getPreferences: () =>
     read<ReaderPreferences>(keys.preferences, {
       theme: 'dark',

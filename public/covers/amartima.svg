@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="920" viewBox="0 0 640 920">
+  <rect width="640" height="920" fill="#172033"/>
+  <path d="M92 196h456v560H92z" fill="#efe3c6" opacity=".9"/>
+  <path d="M132 254h376M132 314h320M132 374h356M132 434h290M132 494h348" stroke="#334155" stroke-width="18" stroke-linecap="round" opacity=".55"/>
+  <path d="M92 684h456v72H92z" fill="#d6bd7a"/>
+  <text x="72" y="120" fill="#f8fafc" font-family="Georgia, serif" font-size="48" font-weight="700">Το Αμάρτημα</text>
+  <text x="72" y="178" fill="#f8fafc" font-family="Georgia, serif" font-size="48" font-weight="700">της Μητρός μου</text>
+  <text x="74" y="828" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="26">Γεώργιος Βιζυηνός</text>
+</svg>

@@ -1,41 +1,46 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Shell } from './components/Layout/Shell'
 import { ReaderView } from './components/Reader/ReaderView'
 import { SettingsPanel } from './components/Settings/SettingsPanel'
-import { defaultBooks } from './data/sampleData'
 import { useTheme } from './hooks/useTheme'
 import { useVocabulary } from './hooks/useVocabulary'
-import { epubService } from './services/epubService'
-import { storageService } from './services/storageService'
-import type { BookRecord } from './types/book'
 import { LibraryPage } from './pages/LibraryPage'
+import { bookService } from './services/bookService'
+import { storageService } from './services/storageService'
+import type { BookProgress } from './types/book'
+
+const createEmptyProgress = (bookId: string): BookProgress => ({
+  bookId,
+  chapterIndex: 0,
+  progress: 0,
+})
 
 function App() {
-  const [books, setBooks] = useState<BookRecord[]>(() => {
-    const storedBooks = storageService.getBooks()
-    const storedWithFreshDefaults = storedBooks.map((book) => {
-      const defaultBook = defaultBooks.find((item) => item.id === book.id)
-      return defaultBook
-        ? { ...book, ...defaultBook, currentLocation: undefined, progress: 0 }
-        : book
-    })
-    const missingDefaultBooks = defaultBooks.filter(
-      (defaultBook) => !storedWithFreshDefaults.some((book) => book.id === defaultBook.id),
-    )
-    return [...missingDefaultBooks, ...storedWithFreshDefaults]
+  const books = useMemo(() => bookService.getBooks(), [])
+  const [progresses, setProgresses] = useState<BookProgress[]>(() =>
+    storageService.getBookProgresses(),
+  )
+  const [activeBookId, setActiveBookId] = useState<string | undefined>(() => {
+    const lastBookId = storageService.getSession().lastBookId
+    return bookService.getBookById(lastBookId)?.id
   })
-  const [activeBookId, setActiveBookId] = useState<string | undefined>(() => storageService.getSession().lastBookId)
-  const [importing, setImporting] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [aiSettings, setAiSettings] = useState(() => storageService.getAiSettings())
   const { preferences, setPreferences } = useTheme()
   const vocabulary = useVocabulary()
 
-  const activeBook = books.find((book) => book.id === activeBookId)
+  const activeBook = bookService.getBookById(activeBookId)
+
+  const getProgress = useCallback(
+    (bookId: string) =>
+      progresses.find((progress) => progress.bookId === bookId) ??
+      createEmptyProgress(bookId),
+    [progresses],
+  )
 
   useEffect(() => {
-    storageService.saveBooks(books)
-  }, [books])
+    storageService.saveBookProgresses(progresses)
+  }, [progresses])
 
   useEffect(() => {
     storageService.saveAiSettings(aiSettings)
@@ -51,19 +56,11 @@ function App() {
     storageService.saveSession({ lastBookId: activeBookId, history })
   }, [activeBook, activeBookId])
 
-  const importBook = async (file: File) => {
-    setImporting(true)
-    try {
-      const book = await epubService.importBook(file)
-      setBooks((current) => [book, ...current])
-      setActiveBookId(book.id)
-    } finally {
-      setImporting(false)
-    }
-  }
-
-  const updateBook = useCallback((updated: BookRecord) => {
-    setBooks((current) => current.map((book) => (book.id === updated.id ? updated : book)))
+  const updateProgress = useCallback((updated: BookProgress) => {
+    setProgresses((current) => [
+      updated,
+      ...current.filter((progress) => progress.bookId !== updated.bookId),
+    ])
   }, [])
 
   return (
@@ -71,10 +68,11 @@ function App() {
       {activeBook ? (
         <ReaderView
           book={activeBook}
+          progress={getProgress(activeBook.id)}
           preferences={preferences}
           onPreferencesChange={setPreferences}
           onBack={() => setActiveBookId(undefined)}
-          onBookUpdate={updateBook}
+          onProgressChange={updateProgress}
           onSaveVocabulary={vocabulary.addFromTranslation}
           aiSettings={aiSettings}
           onOpenSettings={() => setSettingsOpen(true)}
@@ -82,9 +80,8 @@ function App() {
       ) : (
         <LibraryPage
           books={books}
+          getProgress={getProgress}
           vocabulary={vocabulary.items}
-          importing={importing}
-          onImport={importBook}
           onOpenBook={(book) => setActiveBookId(book.id)}
           onOpenSettings={() => setSettingsOpen(true)}
           apiConfigured={aiSettings.provider === 'openai' && Boolean(aiSettings.openAiApiKey.trim())}

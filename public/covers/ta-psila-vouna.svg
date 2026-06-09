@@ -3,8 +3,7 @@
   <path d="M0 610 158 378l98 142 138-210 246 300v310H0Z" fill="#d6bd7a"/>
   <path d="M0 690 142 502l86 116 120-166 292 238v230H0Z" fill="#2c455b" opacity=".92"/>
   <circle cx="498" cy="168" r="54" fill="#f6dfaa" opacity=".92"/>
-  <text x="72" y="166" fill="#f8fafc" font-family="Georgia, serif" font-size="58" font-weight="700">Τα ψηλά</text>
-  <text x="72" y="236" fill="#f8fafc" font-family="Georgia, serif" font-size="58" font-weight="700">βουνά</text>
+  <text x="72" y="166" fill="#f8fafc" font-family="Georgia, serif" font-size="58" font-weight="700">Τα Ψηλά</text>
+  <text x="72" y="236" fill="#f8fafc" font-family="Georgia, serif" font-size="58" font-weight="700">Βουνά</text>
   <text x="74" y="300" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="26">Ζαχαρίας Παπαντωνίου</text>
-  <text x="74" y="812" fill="#111827" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">KimaReader</text>
 </svg>

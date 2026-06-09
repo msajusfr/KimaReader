@@ -1,21 +1,32 @@
-import ePub from 'epubjs'
-import { Bookmark, ChevronLeft, ChevronRight, KeyRound, Library, Minus, Moon, Plus, Search, Sun, Volume2 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { IconButton } from '../UI/IconButton'
-import { TranslationPopover } from '../Translation/TranslationPopover'
-import type { BookRecord, ReaderPreferences } from '../../types/book'
-import type { AiSettings } from '../../types/settings'
-import type { TranslationResult } from '../../types/translation'
-import { epubService } from '../../services/epubService'
+import {
+  Bookmark,
+  ChevronLeft,
+  ChevronRight,
+  KeyRound,
+  Library,
+  Minus,
+  Moon,
+  Plus,
+  Search,
+  Sun,
+  Volume2,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { speechService } from '../../services/speechService'
 import { translationService } from '../../services/translationService'
+import type { BookContent, BookProgress, ReaderPreferences } from '../../types/book'
+import type { AiSettings } from '../../types/settings'
+import type { TranslationResult } from '../../types/translation'
+import { TranslationPopover } from '../Translation/TranslationPopover'
+import { IconButton } from '../UI/IconButton'
 
 interface Props {
-  book: BookRecord
+  book: BookContent
+  progress: BookProgress
   preferences: ReaderPreferences
   onPreferencesChange: (preferences: ReaderPreferences) => void
   onBack: () => void
-  onBookUpdate: (book: BookRecord) => void
+  onProgressChange: (progress: BookProgress) => void
   onSaveVocabulary: (result: TranslationResult) => void
   aiSettings: AiSettings
   onOpenSettings: () => void
@@ -23,145 +34,62 @@ interface Props {
 
 export const ReaderView = ({
   book,
+  progress,
   preferences,
   onPreferencesChange,
   onBack,
-  onBookUpdate,
+  onProgressChange,
   onSaveVocabulary,
   aiSettings,
   onOpenSettings,
 }: Props) => {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const renditionRef = useRef<ReturnType<ReturnType<typeof ePub>['renderTo']> | null>(null)
-  const epubRef = useRef<ReturnType<typeof ePub> | null>(null)
-  const bookRef = useRef(book)
-  const preferencesRef = useRef(preferences)
-  const aiSettingsRef = useRef(aiSettings)
-  const onBookUpdateRef = useRef(onBookUpdate)
   const [selectedText, setSelectedText] = useState('')
   const [translation, setTranslation] = useState<TranslationResult>()
   const [loadingTranslation, setLoadingTranslation] = useState(false)
   const [query, setQuery] = useState('')
-  const surfaceClass = preferences.theme === 'dark' ? 'bg-[#111827]' : 'bg-[#f7f1e7]'
-
-  useEffect(() => {
-    bookRef.current = book
-    preferencesRef.current = preferences
-    aiSettingsRef.current = aiSettings
-    onBookUpdateRef.current = onBookUpdate
-  }, [aiSettings, book, onBookUpdate, preferences])
+  const activeChapterIndex = Math.min(progress.chapterIndex, book.chapters.length - 1)
+  const activeChapter = book.chapters[activeChapterIndex]
+  const surfaceClass = preferences.theme === 'dark' ? 'bg-[#111827] text-slate-100' : 'bg-[#f7f1e7] text-slate-900'
 
   const readerStyles = useMemo(
     () => ({
       maxWidth: `${preferences.readingWidth}px`,
+      fontSize: `${preferences.fontSize}px`,
     }),
-    [preferences.readingWidth],
+    [preferences.fontSize, preferences.readingWidth],
   )
 
-  useEffect(() => {
-    let cancelled = false
-
-    const boot = async () => {
-      if (!containerRef.current) return
-      const arrayBuffer = await epubService.dataUrlToArrayBuffer(bookRef.current.dataUrl)
-      if (cancelled || !containerRef.current) return
-
-      const loadedBook = ePub(arrayBuffer)
-      const rendition = loadedBook.renderTo(containerRef.current, {
-        width: '100%',
-        height: '100%',
-        spread: 'none',
-        flow: 'paginated',
-      })
-
-      rendition.themes.register('dark', {
-        body: {
-          color: '#e5edf6',
-          background: '#111827',
-          'line-height': '1.72',
-          'font-family': 'Georgia, ui-serif, serif',
-        },
-        '::selection': { background: 'rgba(200,169,106,.35)' },
-      })
-      rendition.themes.register('light', {
-        body: {
-          color: '#1f2937',
-          background: '#f7f1e7',
-          'line-height': '1.72',
-          'font-family': 'Georgia, ui-serif, serif',
-        },
-        '::selection': { background: 'rgba(177,135,55,.32)' },
-      })
-
-      rendition.themes.select(preferencesRef.current.theme)
-      rendition.themes.fontSize(`${preferencesRef.current.fontSize}px`)
-      await rendition.display(bookRef.current.currentLocation)
-
-      rendition.on('selected', (cfiRange: unknown, contents: unknown) => {
-        const selection = (contents as { window?: Window }).window?.getSelection()
-        const text = selection?.toString().trim() ?? ''
-        if (text) {
-          setSelectedText(text)
-          setLoadingTranslation(true)
-          setTranslation(undefined)
-          translationService.translate(text, aiSettingsRef.current).then((result) => {
-            setTranslation(result)
-            setLoadingTranslation(false)
-          })
-        }
-        onBookUpdateRef.current({
-          ...bookRef.current,
-          currentLocation: String(cfiRange),
-          lastOpenedAt: new Date().toISOString(),
-        })
-      })
-
-      rendition.on('relocated', (location: unknown) => {
-        const loc = location as { start?: { cfi?: string; percentage?: number } }
-        onBookUpdateRef.current({
-          ...bookRef.current,
-          currentLocation: loc.start?.cfi,
-          progress: Math.round((loc.start?.percentage ?? bookRef.current.progress / 100) * 100),
-          lastOpenedAt: new Date().toISOString(),
-        })
-      })
-
-      epubRef.current = loadedBook
-      renditionRef.current = rendition
-    }
-
-    boot()
-
-    return () => {
-      cancelled = true
-      renditionRef.current?.destroy()
-      epubRef.current?.destroy()
-      renditionRef.current = null
-      epubRef.current = null
-    }
-  }, [book.id])
-
-  useEffect(() => {
-    const rendition = renditionRef.current
-    if (!rendition) return
-    rendition.themes.select(preferences.theme)
-    rendition.themes.fontSize(`${preferences.fontSize}px`)
-  }, [preferences.fontSize, preferences.theme])
-
-  const updatePreferences = (next: Partial<ReaderPreferences>) =>
-    onPreferencesChange({ ...preferences, ...next })
-
-  const searchInBook = () => {
-    const text = query.trim()
-    if (!text) return
-    setSelectedText(text)
+  const translateText = (text: string) => {
+    const normalized = text.trim()
+    if (!normalized) return
+    setSelectedText(normalized)
     setLoadingTranslation(true)
     setTranslation(undefined)
-    translationService.translate(text, aiSettings).then((result) => {
+    translationService.translate(normalized, aiSettings).then((result) => {
       setTranslation(result)
       setLoadingTranslation(false)
     })
   }
+
+  const updateChapter = (chapterIndex: number) => {
+    const bounded = Math.min(Math.max(chapterIndex, 0), book.chapters.length - 1)
+    onProgressChange({
+      bookId: book.id,
+      chapterIndex: bounded,
+      progress: Math.round(((bounded + 1) / book.chapters.length) * 100),
+      lastOpenedAt: new Date().toISOString(),
+    })
+  }
+
+  const handleParagraphPointerUp = (paragraph: string) => {
+    const selection = window.getSelection()?.toString().trim()
+    translateText(selection || paragraph)
+  }
+
+  const updatePreferences = (next: Partial<ReaderPreferences>) =>
+    onPreferencesChange({ ...preferences, ...next })
+
+  const searchInBook = () => translateText(query)
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -204,26 +132,65 @@ export const ReaderView = ({
               OK
             </button>
           </div>
-          <div className="mx-auto transition-all duration-300" style={readerStyles}>
-            <div className={`reader-surface h-[calc(100vh-170px)] min-h-[520px] overflow-hidden rounded-[30px] border border-white/10 ${surfaceClass} shadow-2xl shadow-black/30`}>
-              <div ref={containerRef} className="h-full w-full" />
+
+          <article className="mx-auto transition-all duration-300" style={readerStyles}>
+            <div className={`reader-surface h-[calc(100vh-170px)] min-h-[520px] overflow-auto rounded-[30px] border border-white/10 ${surfaceClass} p-6 shadow-2xl shadow-black/30 sm:p-10`}>
+              <p className="text-xs uppercase tracking-[0.22em] text-[#c8a96a]">
+                {activeChapter.title}
+              </p>
+              <h2 className="mt-3 break-words font-serif text-3xl font-semibold leading-tight sm:text-4xl">
+                {book.title}
+              </h2>
+              <p className="mt-2 text-base text-slate-400">{book.author}</p>
+              <div className="mt-8 space-y-6 font-serif leading-[1.78]">
+                {activeChapter.paragraphs.map((paragraph, index) => (
+                  <p
+                    key={`${activeChapter.title}-${index}`}
+                    onPointerUp={() => handleParagraphPointerUp(paragraph)}
+                    className="cursor-text break-words rounded-2xl px-1 py-1 transition hover:bg-[#c8a96a]/10"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
             </div>
-          </div>
+          </article>
+
           <div className="mx-auto mt-3 flex max-w-[760px] items-center justify-between">
-            <IconButton label="Page précédente" onClick={() => renditionRef.current?.prev()}>
+            <IconButton label="Chapitre précédent" onClick={() => updateChapter(activeChapterIndex - 1)}>
               <ChevronLeft size={20} />
             </IconButton>
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <Bookmark size={14} className="text-[#c8a96a]" />
-              {book.progress}% lu
+              {progress.progress}% lu
             </div>
-            <IconButton label="Page suivante" onClick={() => renditionRef.current?.next()}>
+            <IconButton label="Chapitre suivant" onClick={() => updateChapter(activeChapterIndex + 1)}>
               <ChevronRight size={20} />
             </IconButton>
           </div>
         </section>
 
         <aside className="hidden space-y-3 lg:block">
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.055] p-4 backdrop-blur-xl">
+            <p className="text-xs uppercase tracking-[0.22em] text-[#c8a96a]">Chapitres</p>
+            <div className="mt-4 space-y-2">
+              {book.chapters.map((chapter, index) => (
+                <button
+                  key={chapter.title}
+                  type="button"
+                  onClick={() => updateChapter(index)}
+                  className={`w-full rounded-2xl px-3 py-2 text-left text-sm transition ${
+                    index === activeChapterIndex
+                      ? 'bg-[#c8a96a] text-[#15120b]'
+                      : 'bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]'
+                  }`}
+                >
+                  {chapter.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="rounded-[28px] border border-white/10 bg-white/[0.055] p-4 backdrop-blur-xl">
             <p className="text-xs uppercase tracking-[0.22em] text-[#c8a96a]">Lecture</p>
             <label className="mt-4 block text-xs text-slate-400">
@@ -237,7 +204,7 @@ export const ReaderView = ({
                 className="mt-2 w-full accent-[#c8a96a]"
               />
             </label>
-            <button type="button" onClick={() => speechService.speak(selectedText || book.title)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/14">
+            <button type="button" onClick={() => speechService.speak(selectedText || activeChapter.paragraphs.join(' '))} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/14">
               <Volume2 size={16} /> Lire la sélection
             </button>
             <button type="button" onClick={onOpenSettings} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#c8a96a] px-4 py-2 text-sm font-medium text-[#15120b] hover:bg-[#d8bd80]">

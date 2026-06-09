@@ -13,7 +13,7 @@ export default defineConfig({
       manifest: {
         name: 'KimaReader',
         short_name: 'Kima',
-        description: 'Immersive Greek EPUB reader for language learning.',
+        description: 'Immersive Greek JSON reader for language learning.',
         start_url: '/',
         display: 'standalone',
         theme_color: '#111827',
@@ -34,7 +34,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,epub}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,json}'],
       },
     }),
   ],

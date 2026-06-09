@@ -1,11 +1,11 @@
 # KimaReader
 
-KimaReader is a lightweight, mobile-first Greek EPUB reader for immersive language learning. It runs entirely in the browser with React, TypeScript, Vite, Tailwind CSS, EPUB.js, local storage, Web Speech API, and PWA support.
+KimaReader is a lightweight, mobile-first Greek reader for immersive language learning. It runs entirely in the browser with React, TypeScript, Vite, Tailwind CSS, local JSON books, local storage, Web Speech API, and PWA support.
 
 ## Features
 
-- Local EPUB import and library persistence.
-- Real EPUB.js reader with paginated navigation.
+- Local JSON book library with a simple structured content format.
+- Native React reader with chapters and selectable paragraphs.
 - Reader preferences for dark/light theme, font size, and reading width.
 - Text-selection translation flow with a replaceable mocked LLM service.
 - Greek speech playback through the browser Web Speech API.
@@ -34,4 +34,4 @@ src/
   utils/
 ```
 
-The translation service is intentionally mocked in `src/services/translationService.ts` so it can later be replaced with OpenAI, Claude, Gemini, or a local Ollama call without touching the reader UI.
+Book content lives in `src/data/books/*.json` and is loaded through `src/services/bookService.ts`. The translation service supports mock mode and OpenAI mode from `src/services/translationService.ts`.

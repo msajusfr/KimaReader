@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="920" viewBox="0 0 640 920">
+  <rect width="640" height="920" fill="#101820"/>
+  <path d="M0 640c110-92 224-112 342-61s217 36 298-44v385H0Z" fill="#24364a"/>
+  <path d="M96 268c88-120 231-120 318 0 52 72 70 159 54 260H42c-16-101 2-188 54-260Z" fill="#0b1019" opacity=".82"/>
+  <text x="72" y="170" fill="#f8fafc" font-family="Georgia, serif" font-size="66" font-weight="700">Η Φόνισσα</text>
+  <text x="74" y="238" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="26">Αλέξανδρος Παπαδιαμάντης</text>
+  <circle cx="494" cy="728" r="62" fill="#d6bd7a" opacity=".9"/>
+</svg>
